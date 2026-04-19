@@ -6,6 +6,8 @@
 通过命令行方式调用NBS转换工具，适用于自动化处理场景
 """
 
+from __future__ import annotations
+
 import pynbs
 
 from nbs2save.core.config import GENERATE_CONFIG, GROUP_CONFIG
@@ -36,7 +38,7 @@ def progress(value: int):
 class CLIProcessor(GroupProcessor):
     """CLI版本的轨道组处理器"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         # 读取NBS文件
         nbs = pynbs.read(GENERATE_CONFIG["input_file"])
         all_notes = nbs.notes

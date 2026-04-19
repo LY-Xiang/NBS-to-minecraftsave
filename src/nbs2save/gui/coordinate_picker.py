@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any, Callable, Dict, Optional
+
 from PyQt6.QtWidgets import (
     QDialog,
     QPushButton,
@@ -11,15 +15,16 @@ from PyQt6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QGraphicsTextItem,
+    QWidget,
 )
 from PyQt6.QtCore import Qt, QPointF, QPropertyAnimation, QEasingCurve
-from PyQt6.QtGui import QPen, QBrush, QColor, QPainter, QFont
+from PyQt6.QtGui import QPen, QBrush, QColor, QPainter, QFont, QWheelEvent
 
 # 导入新写的动画工具
 from .animations import AnimationUtils, GraphicsItemAnimWrapper
 
 
-def get_color_by_id(group_id, is_active=False):
+def get_color_by_id(group_id: int, is_active: bool = False) -> QColor:
     if is_active:
         return QColor(0, 120, 255, 230)
     hue = (group_id * 137.508) % 360
@@ -29,7 +34,14 @@ def get_color_by_id(group_id, is_active=False):
 class TrackGroupItem(QGraphicsRectItem):
     """代表轨道组位置的图元"""
 
-    def __init__(self, x, y, group_id, is_active=True, on_move_callback=None):
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        group_id: int,
+        is_active: bool = True,
+        on_move_callback: Optional[Callable[[int, int], None]] = None,
+    ) -> None:
         size = 12
         super().__init__(-size / 2, -size / 2, size, size)
 
@@ -72,7 +84,7 @@ class TrackGroupItem(QGraphicsRectItem):
         self.text_item.setPos(-text_rect.width() / 2, -size / 2 - 15)
         self.text_item.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
 
-    def move_smoothly_to(self, x, y):
+    def move_smoothly_to(self, x: int, y: int) -> None:
         """平滑移动到指定位置 (x, -y)"""
         if self.anim_wrapper:
             if self.pos_anim.state() == QPropertyAnimation.State.Running:
@@ -111,7 +123,7 @@ class TrackGroupItem(QGraphicsRectItem):
 class GridScene(QGraphicsScene):
     """带有网格背景的场景"""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.grid_size = 10
         self.setBackgroundBrush(QBrush(QColor(30, 30, 30)))
@@ -165,7 +177,12 @@ class GridScene(QGraphicsScene):
 class CoordinatePickerDialog(QDialog):
     """坐标选择对话框"""
 
-    def __init__(self, target_group_id, all_groups_data, parent=None):
+    def __init__(
+        self,
+        target_group_id: int,
+        all_groups_data: Dict[int, Dict[str, Any]],
+        parent: Optional[QWidget] = None,
+    ) -> None:
         super().__init__(parent)
         self.setWindowTitle(
             f"轨道布局规划 (侧视图 X-Y) - 正在编辑 ID: {target_group_id}"
@@ -189,7 +206,7 @@ class CoordinatePickerDialog(QDialog):
         # 启动入场动画
         AnimationUtils.fade_in_entry(self)
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         layout = QHBoxLayout(self)
 
         # === 左侧控制 ===
@@ -301,7 +318,7 @@ class CoordinatePickerDialog(QDialog):
         layout.addWidget(control_panel)
         layout.addWidget(self.view)
 
-    def on_point_dragged(self, x, y):
+    def on_point_dragged(self, x: int, y: int) -> None:
         """鼠标拖动 -> 更新数值 (阻断信号防止循环递归)"""
         self.spin_x.blockSignals(True)
         self.spin_y.blockSignals(True)
@@ -310,7 +327,7 @@ class CoordinatePickerDialog(QDialog):
         self.spin_x.blockSignals(False)
         self.spin_y.blockSignals(False)
 
-    def update_from_spinbox(self):
+    def update_from_spinbox(self) -> None:
         """数值改变 -> 平滑移动图元"""
         x = self.spin_x.value()
         y = self.spin_y.value()
@@ -320,10 +337,10 @@ class CoordinatePickerDialog(QDialog):
             # 可选：让视图跟随 (如果希望视野一直锁定目标)
             # self.view.centerOn(float(x), -float(y))
 
-    def get_coords(self):
+    def get_coords(self) -> tuple[int, int, int]:
         return self.spin_x.value(), self.spin_y.value(), self.spin_z.value()
 
-    def wheelEvent(self, event):
+    def wheelEvent(self, event: QWheelEvent) -> None:
         if self.view.underMouse():
             zoom_in = event.angleDelta().y() > 0
             factor = 1.15 if zoom_in else 1 / 1.15

@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Optional
+
 from PyQt6.QtCore import (
     QPropertyAnimation,
     QEasingCurve,
@@ -14,7 +18,7 @@ class AnimationUtils:
     """通用动画工具类"""
 
     @staticmethod
-    def fade_in_entry(widget: QWidget, duration=500, scale=True):
+    def fade_in_entry(widget: QWidget, duration: int = 500, scale: bool = True) -> None:
         """
         窗口进入动画：
         1. 透明度 0 -> 1
@@ -51,7 +55,7 @@ class AnimationUtils:
 class GraphicsItemAnimWrapper(QObject):
     """QGraphicsItem 的动画包装器"""
 
-    def __init__(self, item: QGraphicsItem):
+    def __init__(self, item: QGraphicsItem) -> None:
         super().__init__()
         self.item = item
 
@@ -70,7 +74,7 @@ class ColorAnimWrapper(QObject):
     需要配合 paintEvent 使用
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._color = QColor(0, 0, 0, 0)
         self.widget = parent

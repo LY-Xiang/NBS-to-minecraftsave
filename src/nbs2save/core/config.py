@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Dict, List, Tuple, Union
+
 from mcschematic import Version
 
 # ==============================================================================
@@ -11,7 +15,7 @@ from mcschematic import Version
 # --------------------------
 # GENERATE_CONFIG 定义了程序的基本运行参数，控制整个转换过程的行为
 # 包括输入文件路径、输出格式、输出文件名等设置
-GENERATE_CONFIG = {
+GENERATE_CONFIG: Dict[str, Union[Version, str]] = {
     # data_version: 指定生成的schematic文件的Minecraft版本
     # 这个参数只在输出格式为schematic时生效
     # 可选值参考 mcschematic.Version 枚举
@@ -36,7 +40,9 @@ GENERATE_CONFIG = {
 # GROUP_CONFIG 定义了如何将NBS文件中的音符轨道分组以及每组的生成参数
 # 每个轨道组可以有不同的基准坐标、包含的轨道列表和方块配置
 # 键为轨道组ID(整数)，值为该组的配置参数
-GROUP_CONFIG = {
+GROUP_CONFIG: Dict[
+    int, Dict[str, Union[Tuple[str, str, str], List[int], Dict[str, str], str]]
+] = {
     # 轨道组0的配置
     0: {
         # base_coords: 轨道组的基准坐标 (x, y, z)

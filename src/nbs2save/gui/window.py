@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import os
 import json
 import traceback
+from typing import Any, Dict
 
 import pynbs
 from PyQt6.QtWidgets import (
@@ -38,7 +41,7 @@ from .coordinate_picker import CoordinatePickerDialog
 from .animations import AnimationUtils
 
 
-def create_fluent_style():
+def create_fluent_style() -> str:
     """
     Revised Style: Warm Light Gray + Consistent Radius
     """
@@ -156,19 +159,19 @@ def create_fluent_style():
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("NBS-to-Minecraft")
         self.setGeometry(100, 100, 1200, 850)
 
-        self.config = {
+        self.config: Dict[str, Any] = {
             "data_version": MINECRAFT_VERSIONS[0],
             "input_file": "",
             "type": "schematic",
             "output_file": "output",
         }
 
-        self.group_config = {
+        self.group_config: Dict[int, Dict[str, Any]] = {
             0: {
                 "base_coords": ("0", "0", "0"),
                 "layers": [0],
@@ -185,7 +188,7 @@ class MainWindow(QMainWindow):
 
         AnimationUtils.fade_in_entry(self, duration=600)
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(40, 32, 40, 32)
@@ -433,7 +436,7 @@ class MainWindow(QMainWindow):
 
     # --- Logic (保持不变) ---
 
-    def log(self, message):
+    def log(self, message: str) -> None:
         self.log_text.append(message)
         self.log_text.verticalScrollBar().setValue(
             self.log_text.verticalScrollBar().maximum()
@@ -441,13 +444,13 @@ class MainWindow(QMainWindow):
         if len(message) < 50 and ">>>" not in message:
             self.status_bar_label.setText(message)
 
-    def update_progress(self, value):
+    def update_progress(self, value: int) -> None:
         self.progress_bar.setVisible(True)
         self.progress_bar.setValue(value)
         if value >= 100:
             self.status_bar_label.setText("任务完成")
 
-    def browse_input_file(self):
+    def browse_input_file(self) -> None:
         file_path, _ = QFileDialog.getOpenFileName(
             self, "选择NBS文件", "", "Note Block Studio (*.nbs)"
         )
@@ -456,7 +459,7 @@ class MainWindow(QMainWindow):
             base_name = os.path.splitext(os.path.basename(file_path))[0]
             self.output_file_edit.setText(base_name)
 
-    def browse_output_file(self):
+    def browse_output_file(self) -> None:
         output_type = self.type_combo.currentData()
         ext = ".schem" if output_type == "schematic" else ".mcfunction"
         file_path, _ = QFileDialog.getSaveFileName(
@@ -467,7 +470,7 @@ class MainWindow(QMainWindow):
                 file_path += ext
             self.output_file_edit.setText(file_path)
 
-    def add_group(self):
+    def add_group(self) -> None:
         self.save_table_to_config()
         gid = max(self.group_config.keys()) + 1 if self.group_config else 0
         self.group_config[gid] = {
@@ -478,7 +481,7 @@ class MainWindow(QMainWindow):
         }
         self.update_groups_table()
 
-    def remove_group(self):
+    def remove_group(self) -> None:
         if len(self.group_config) <= 1:
             QMessageBox.warning(self, "提示", "至少保留一个轨道组")
             return
@@ -489,7 +492,7 @@ class MainWindow(QMainWindow):
             del self.group_config[gid]
             self.update_groups_table()
 
-    def save_table_to_config(self):
+    def save_table_to_config(self) -> None:
         new_config = {}
         for r in range(self.groups_table.rowCount()):
             try:
@@ -524,7 +527,7 @@ class MainWindow(QMainWindow):
             }
         self.group_config = new_config
 
-    def update_groups_table(self):
+    def update_groups_table(self) -> None:
         self.groups_table.setRowCount(len(self.group_config))
         for r, (gid, cfg) in enumerate(self.group_config.items()):
             self.groups_table.setItem(r, 0, QTableWidgetItem(str(gid)))
@@ -557,7 +560,7 @@ class MainWindow(QMainWindow):
                 r, 8, QTableWidgetItem(cfg.get("generation_mode", "default"))
             )
 
-    def open_coordinate_picker(self, row):
+    def open_coordinate_picker(self, row: int) -> None:
         self.save_table_to_config()
         try:
             gid = int(self.groups_table.item(row, 0).text())
@@ -571,7 +574,7 @@ class MainWindow(QMainWindow):
             self.groups_table.setItem(row, 3, QTableWidgetItem(str(nz)))
             self.save_table_to_config()
 
-    def start_conversion(self):
+    def start_conversion(self) -> None:
         self.save_table_to_config()
         self.config["data_version"] = self.version_combo.currentData()
         self.config["input_file"] = self.input_file_edit.text()
@@ -626,7 +629,7 @@ class MainWindow(QMainWindow):
         finally:
             self.progress_bar.setValue(100)
 
-    def save_config(self):
+    def save_config(self) -> None:
         self.save_table_to_config()
         path, _ = QFileDialog.getSaveFileName(self, "保存配置", "", "JSON (*.json)")
         if path:
@@ -637,7 +640,7 @@ class MainWindow(QMainWindow):
                     indent=2,
                 )
 
-    def load_config(self):
+    def load_config(self) -> None:
         path, _ = QFileDialog.getOpenFileName(self, "加载配置", "", "JSON (*.json)")
         if path:
             with open(path, "r") as f:
@@ -649,7 +652,7 @@ class MainWindow(QMainWindow):
             self.update_groups_table()
             self.log(f"已加载配置: {path}")
 
-    def save_last_config(self):
+    def save_last_config(self) -> None:
         try:
             with open("last_config.json", "w") as f:
                 json.dump(
@@ -658,7 +661,7 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
 
-    def load_last_config(self):
+    def load_last_config(self) -> None:
         try:
             if os.path.exists("last_config.json"):
                 with open("last_config.json", "r") as f:

@@ -1,4 +1,57 @@
+from __future__ import annotations
+
+from collections.abc import Callable, Hashable, Mapping
+from typing import Dict, Generic, List, Optional, TypeVar
+
 from mcschematic import Version
+
+K = TypeVar("K", bound=Hashable)
+V = TypeVar("V")
+
+
+class MapperError(Exception):
+    """Mapper 无法映射键时抛出的异常。"""
+
+
+class Mapper(Generic[K, V]):
+    """只读键值映射器，带内部缓存与键验证。
+
+    获取值优先级：内部缓存 → mapper 计算 → 验证不过返回 default。
+    验证不过的结果不会被缓存。当键通过验证但既无缓存也无 mapper 时抛出 MapperError。
+    """
+
+    __slots__ = ("_cache", "_mapper", "_validator", "_default")
+
+    def __init__(
+        self,
+        *,
+        validator: Callable[[K], bool],
+        default: V,
+        mapper: Optional[Callable[[K], V]] = None,
+        cache: Optional[Mapping[K, V]] = None,
+    ) -> None:
+        self._validator: Callable[[K], bool] = validator
+        self._default: V = default
+        self._mapper: Optional[Callable[[K], V]] = mapper
+        self._cache: dict[K, V] = dict(cache) if cache is not None else {}
+
+    def __call__(self, key: K) -> V:
+        if key in self._cache:
+            return self._cache[key]
+        if not self._validator(key):
+            return self._default
+        if self._mapper is not None:
+            value = self._mapper(key)
+            self._cache[key] = value
+            return value
+        raise MapperError(f"键 {key!r} 通过验证但无法映射")
+
+    def __contains__(self, key: K) -> bool:
+        return (key in self._cache) or self._validator(key)
+
+    def __repr__(self) -> str:
+        return f"Mapper(cache={self._cache!r}, default={self._default!r})"
+
 
 # ==============================================================================
 # NBS到Minecraft结构转换工具常量定义文件
@@ -37,7 +90,7 @@ from mcschematic import Version
 # 13 -> "bit"            比特音色
 # 14 -> "banjo"          班卓琴音色
 # 15 -> "pling"          电钢琴音色
-INSTRUMENT_MAPPING = {
+INSTRUMENT_MAPPING: Dict[int, str] = {
     0: "harp",
     1: "bass",
     2: "basedrum",
@@ -80,7 +133,7 @@ INSTRUMENT_MAPPING = {
 # 13 -> "minecraft:emerald_block" 比特音色对应绿宝石块
 # 14 -> "minecraft:hay_block"     班卓琴音色对应干草块
 # 15 -> "minecraft:glowstone"     电钢琴音色对应荧石方块
-INSTRUMENT_BLOCK_MAPPING = {
+INSTRUMENT_BLOCK_MAPPING: Dict[int, str] = {
     0: "minecraft:dirt",
     1: "minecraft:oak_planks",
     2: "minecraft:stone",
@@ -115,7 +168,7 @@ INSTRUMENT_BLOCK_MAPPING = {
 # 映射逻辑:
 # 将MIDI键值33-57映射到Minecraft音高值0-24
 # 即: 音高值 = MIDI键值 - 33
-NOTEPITCH_MAPPING = {k: str(v) for v, k in enumerate(range(33, 58))}
+NOTEPITCH_MAPPING: Dict[int, str] = {k: str(k - 33) for k in range(33, 58)}
 
 
 # --------------------------
@@ -125,7 +178,7 @@ NOTEPITCH_MAPPING = {k: str(v) for v, k in enumerate(range(33, 58))}
 # 用于生成schematic文件时指定目标Minecraft版本
 # 版本按从新到旧的顺序排列，确保兼容性
 # 当生成schematic文件时，程序会使用配置中指定的版本
-MINECRAFT_VERSIONS = [
+MINECRAFT_VERSIONS: List[Version] = [
     Version.JE_1_21_5,
     Version.JE_1_21_4,
     Version.JE_1_21_3,

@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Optional
+
 from PyQt6.QtWidgets import (
     QPushButton,
     QLineEdit,
@@ -21,8 +25,20 @@ from PyQt6.QtCore import (
     QPoint,
     pyqtProperty,
     QAbstractAnimation,
+    QEvent,
 )
-from PyQt6.QtGui import QColor, QPainter, QBrush, QPen, QFont
+from PyQt6.QtGui import (
+    QColor,
+    QPainter,
+    QBrush,
+    QPen,
+    QFont,
+    QIcon,
+    QPaintEvent,
+    QMouseEvent,
+    QEnterEvent,
+    QShowEvent,
+)
 
 from .animations import ColorAnimWrapper
 
@@ -58,7 +74,14 @@ class FluentButton(QPushButton):
     - 平滑的 Color Fade + Scale Bounce 动画
     """
 
-    def __init__(self, text, icon=None, parent=None, is_primary=False, is_danger=False):
+    def __init__(
+        self,
+        text: str,
+        icon: Optional[QIcon] = None,
+        parent: Optional[QWidget] = None,
+        is_primary: bool = False,
+        is_danger: bool = False,
+    ) -> None:
         super().__init__(text, parent)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         if icon:
@@ -103,7 +126,7 @@ class FluentButton(QPushButton):
             self.shadow.setOffset(0, 1)
             self.setGraphicsEffect(self.shadow)
 
-    def _update_target_colors(self):
+    def _update_target_colors(self) -> None:
         """定义三态颜色"""
         if self.is_primary:
             self.bg_normal = PRIMARY_BG
@@ -126,15 +149,15 @@ class FluentButton(QPushButton):
             self.border_color = STD_BORDER
 
     @pyqtProperty(float)
-    def scale_prop(self):
+    def scale_prop(self) -> float:
         return self._scale_val
 
     @scale_prop.setter
-    def scale_prop(self, val):
+    def scale_prop(self, val: float) -> None:
         self._scale_val = val
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
@@ -196,7 +219,7 @@ class FluentButton(QPushButton):
         else:
             painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
 
-    def enterEvent(self, event):
+    def enterEvent(self, event: QEnterEvent) -> None:
         # 颜色变深 (Hover)
         self.bg_anim.stop()
         self.bg_anim.setEndValue(self.bg_hover)
@@ -208,7 +231,7 @@ class FluentButton(QPushButton):
         self.scale_anim.start()
         super().enterEvent(event)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, event: QEvent) -> None:
         # 颜色恢复
         self.bg_anim.stop()
         self.bg_anim.setEndValue(self.bg_normal)
@@ -222,7 +245,7 @@ class FluentButton(QPushButton):
         self.scale_anim.start()
         super().leaveEvent(event)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         # 颜色按下 (Press)
         self.bg_anim.stop()
         self.bg_anim.setEndValue(self.bg_press)
@@ -236,7 +259,7 @@ class FluentButton(QPushButton):
         self.scale_anim.start()
         super().mousePressEvent(event)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         # 颜色回 Hover
         self.bg_anim.stop()
         self.bg_anim.setEndValue(self.bg_hover)
@@ -254,7 +277,7 @@ class FluentButton(QPushButton):
 class FluentCard(QWidget):
     """圆角卡片容器 - 带入场淡入动画"""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.setStyleSheet("""
             FluentCard {
@@ -276,7 +299,7 @@ class FluentCard(QWidget):
         self._fade_anim.setEndValue(1.0)
         self._fade_anim.finished.connect(self._on_fade_finished)
 
-    def _on_fade_finished(self):
+    def _on_fade_finished(self) -> None:
         self._fade_anim_done = True
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(15)
@@ -284,7 +307,7 @@ class FluentCard(QWidget):
         shadow.setOffset(0, 3)
         self.setGraphicsEffect(shadow)
 
-    def showEvent(self, event):
+    def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
         if (
             not self._fade_anim_done
@@ -296,7 +319,7 @@ class FluentCard(QWidget):
 class SmoothStackedWidget(QStackedWidget):
     """滑动切换容器"""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.m_direction = Qt.Orientation.Horizontal
         self.m_speed = 300
@@ -308,7 +331,7 @@ class SmoothStackedWidget(QStackedWidget):
         self.l_now = None
         self.l_next = None
 
-    def setCurrentIndex(self, index):
+    def setCurrentIndex(self, index: int) -> None:
         if self.m_active or self.currentIndex() == index:
             super().setCurrentIndex(index)
             return
@@ -374,7 +397,7 @@ class SmoothStackedWidget(QStackedWidget):
         w_now.hide()
         w_next.hide()
 
-    def animationDone(self):
+    def animationDone(self) -> None:
         self.setCurrentIndex_original(self.m_next)
         self.widget(self.m_next).show()
         if self.l_now is not None:
@@ -385,14 +408,19 @@ class SmoothStackedWidget(QStackedWidget):
             self.l_next = None
         self.m_active = False
 
-    def setCurrentIndex_original(self, index):
+    def setCurrentIndex_original(self, index: int) -> None:
         super().setCurrentIndex(index)
 
 
 class NavButton(QPushButton):
     """顶部导航按钮 (Tab) - 带平滑颜色过渡动画"""
 
-    def __init__(self, text, icon_char=None, parent=None):
+    def __init__(
+        self,
+        text: str,
+        icon_char: Optional[str] = None,
+        parent: Optional[QWidget] = None,
+    ) -> None:
         super().__init__(text, parent)
         self.setCheckable(True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -416,21 +444,21 @@ class NavButton(QPushButton):
         self.bg_anim.setDuration(200)
         self.bg_anim.setEasingCurve(QEasingCurve.Type.OutQuad)
 
-    def enterEvent(self, event):
+    def enterEvent(self, event: QEnterEvent) -> None:
         if not self.isChecked():
             self.bg_anim.stop()
             self.bg_anim.setEndValue(self.bg_hover)
             self.bg_anim.start()
         super().enterEvent(event)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, event: QEvent) -> None:
         if not self.isChecked():
             self.bg_anim.stop()
             self.bg_anim.setEndValue(self.bg_normal)
             self.bg_anim.start()
         super().leaveEvent(event)
 
-    def paintEvent(self, event):
+    def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -458,7 +486,7 @@ class NavButton(QPushButton):
 
 
 class FluentTabWidget(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
@@ -482,7 +510,9 @@ class FluentTabWidget(QWidget):
         self.layout.addWidget(self.stacked_widget)
         self.buttons = []
 
-    def addTab(self, widget, text, icon_char=None):
+    def addTab(
+        self, widget: QWidget, text: str, icon_char: Optional[str] = None
+    ) -> None:
         index = self.stacked_widget.addWidget(widget)
         display_text = f"{icon_char}  {text}" if icon_char else text
         btn = NavButton(display_text, icon_char)
@@ -492,14 +522,14 @@ class FluentTabWidget(QWidget):
         if index == 0:
             btn.setChecked(True)
 
-    def switch_tab(self, index):
+    def switch_tab(self, index: int) -> None:
         for i, btn in enumerate(self.buttons):
             btn.setChecked(i == index)
         self.stacked_widget.setCurrentIndex(index)
 
 
 class FluentLineEdit(QLineEdit):
-    def __init__(self, placeholder="", parent=None):
+    def __init__(self, placeholder: str = "", parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.setPlaceholderText(placeholder)
         self.setMinimumHeight(34)
@@ -507,14 +537,14 @@ class FluentLineEdit(QLineEdit):
 
 
 class FluentComboBox(QComboBox):
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.setMinimumHeight(34)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
 
 class FluentGroupBox(QGroupBox):
-    def __init__(self, title="", parent=None):
+    def __init__(self, title: str = "", parent: Optional[QWidget] = None) -> None:
         super().__init__(title, parent)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         inner_layout = QVBoxLayout()

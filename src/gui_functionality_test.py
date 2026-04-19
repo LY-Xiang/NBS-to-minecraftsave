@@ -6,10 +6,13 @@ GUI功能完整性测试脚本
 该脚本使用ai辅助编写，测试窗口初始化、基本输入字段、轨道组设置、生成模式选择、输出目录选择、转换按钮点击等核心功能。
 """
 
+from __future__ import annotations
+
 import os
 import sys
 import time
 import unittest
+from typing import Optional, Type
 from unittest.mock import patch
 
 # 添加项目路径
@@ -30,7 +33,7 @@ class GUI_Functionality_Test(unittest.TestCase):
     """GUI功能测试类"""
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         """测试类初始化"""
         if not QApplication.instance():
             cls.app = QApplication([])
@@ -42,7 +45,7 @@ class GUI_Functionality_Test(unittest.TestCase):
         time.sleep(0.1)  # 确保窗口完全加载
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         """测试类清理"""
         cls.window.close()
         QApplication.processEvents()
@@ -224,7 +227,7 @@ class GUI_Functionality_Test(unittest.TestCase):
         print("✅ Win11样式应用测试通过")
 
 
-def run_gui_functionality_tests():
+def run_gui_functionality_tests() -> bool:
     """运行GUI功能测试"""
     print("🚀 开始Win11风格GUI功能完整性测试")
     print("=" * 60)

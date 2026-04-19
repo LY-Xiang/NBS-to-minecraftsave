@@ -14,7 +14,7 @@ Minecraft函数文件生成器
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, Tuple
 
 from pynbs import Note
 
@@ -29,9 +29,9 @@ class McFunctionOutputStrategy(OutputFormatStrategy):
     """输出为 .mcfunction 命令文件的策略实现。"""
 
     def __init__(self):
-        self.commands = []  # 存储生成的命令
+        self.commands: List[str] = []  # 存储生成的命令
 
-    def initialize(self, processor: GroupProcessor):
+    def initialize(self, processor: GroupProcessor) -> None:
         """
         初始化输出格式，清空命令列表
 
@@ -44,7 +44,7 @@ class McFunctionOutputStrategy(OutputFormatStrategy):
         with open(output_file, "w", encoding="utf-8") as f:
             f.write("")  # 创建空文件或清空已有文件
 
-    def write_base_structures(self, processor: GroupProcessor, tick: int):
+    def write_base_structures(self, processor: GroupProcessor, tick: int) -> None:
         """
         写入基础结构
 
@@ -62,7 +62,9 @@ class McFunctionOutputStrategy(OutputFormatStrategy):
         ]
         self._write_commands(processor, commands)
 
-    def write_pan_platform(self, processor: GroupProcessor, tick: int, direction: int):
+    def write_pan_platform(
+        self, processor: GroupProcessor, tick: int, direction: int
+    ) -> None:
         """
         写入声像平台
 
@@ -104,7 +106,7 @@ class McFunctionOutputStrategy(OutputFormatStrategy):
         self._write_commands(processor, platform_commands)
         processor.tick_status[tick]["right" if direction == 1 else "left"] = True
 
-    def write_note(self, processor: GroupProcessor, note: Note):
+    def write_note(self, processor: GroupProcessor, note: Note) -> None:
         """
         写入音符
 
@@ -129,7 +131,7 @@ class McFunctionOutputStrategy(OutputFormatStrategy):
 
         self._write_commands(processor, commands)
 
-    def finalize(self, processor: GroupProcessor):
+    def finalize(self, processor: GroupProcessor) -> None:
         """
         完成输出，将所有命令写入文件
 
@@ -140,7 +142,7 @@ class McFunctionOutputStrategy(OutputFormatStrategy):
         with open(output_file, "a", encoding="utf-8") as f:
             f.write("\n".join(self.commands) + "\n\n")
 
-    def _write_commands(self, processor: GroupProcessor, commands: List[str]):
+    def _write_commands(self, processor: GroupProcessor, commands: List[str]) -> None:
         """
         将命令添加到命令列表中
 
@@ -154,11 +156,11 @@ class McFunctionOutputStrategy(OutputFormatStrategy):
     # 工具方法
     # ----------------------
     @staticmethod
-    def get_note_block_info(note: Note):
+    def get_note_block_info(note: Note) -> Tuple[str, str, str]:
         """根据 instrument 获取音符方块属性。"""
-        instrument = INSTRUMENT_MAPPING.get(note.instrument, "harp")
-        base_block = INSTRUMENT_BLOCK_MAPPING.get(note.instrument, "minecraft:stone")
-        note_pitch = NOTEPITCH_MAPPING.get(note.key, "0")
+        instrument = INSTRUMENT_MAPPING.map(note.instrument)
+        base_block = INSTRUMENT_BLOCK_MAPPING.map(note.instrument)
+        note_pitch = NOTEPITCH_MAPPING.map(note.key)
         return instrument, base_block, note_pitch
 
     @staticmethod
@@ -173,22 +175,28 @@ class McFunctionOutputStrategy(OutputFormatStrategy):
 class McFunctionProcessor(GroupProcessor):
     """向后兼容的 McFunctionProcessor 类。"""
 
-    def __init__(self, all_notes, global_max_tick, config, group_config):
+    def __init__(
+        self,
+        all_notes: List[Note],
+        global_max_tick: int,
+        config: dict,
+        group_config: dict,
+    ):
         super().__init__(all_notes, global_max_tick, config, group_config)
         self.set_output_strategy(McFunctionOutputStrategy())
 
-    def _generate_base_structures(self, tick: int):
+    def _generate_base_structures(self, tick: int) -> None:
         """向后兼容的方法。"""
         pass
 
-    def _generate_pan_platform(self, tick: int, direction: int):
+    def _generate_pan_platform(self, tick: int, direction: int) -> None:
         """向后兼容的方法。"""
         pass
 
-    def _generate_note(self, note: Note):
+    def _generate_note(self, note: Note) -> None:
         """向后兼容的方法。"""
         pass
 
-    def _write(self, commands: List[str]):
+    def _write(self, commands: List[str]) -> None:
         """向后兼容的方法。"""
         pass

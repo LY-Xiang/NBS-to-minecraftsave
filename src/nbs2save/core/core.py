@@ -18,9 +18,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Dict, List
-
 from collections import defaultdict
+from typing import Callable, Dict, List, Optional
+
 from pynbs import Note
 
 
@@ -34,7 +34,7 @@ class OutputFormatStrategy(ABC):
     """
 
     @abstractmethod
-    def initialize(self, processor: GroupProcessor):
+    def initialize(self, processor: GroupProcessor) -> None:
         """
         初始化输出格式
 
@@ -44,7 +44,7 @@ class OutputFormatStrategy(ABC):
         pass
 
     @abstractmethod
-    def write_base_structures(self, processor: GroupProcessor, tick: int):
+    def write_base_structures(self, processor: GroupProcessor, tick: int) -> None:
         """
         写入基础结构
 
@@ -55,7 +55,9 @@ class OutputFormatStrategy(ABC):
         pass
 
     @abstractmethod
-    def write_pan_platform(self, processor: GroupProcessor, tick: int, direction: int):
+    def write_pan_platform(
+        self, processor: GroupProcessor, tick: int, direction: int
+    ) -> None:
         """
         写入声像平台
 
@@ -67,7 +69,7 @@ class OutputFormatStrategy(ABC):
         pass
 
     @abstractmethod
-    def write_note(self, processor: GroupProcessor, note: Note):
+    def write_note(self, processor: GroupProcessor, note: Note) -> None:
         """
         写入音符
 
@@ -78,7 +80,7 @@ class OutputFormatStrategy(ABC):
         pass
 
     @abstractmethod
-    def finalize(self, processor: GroupProcessor):
+    def finalize(self, processor: GroupProcessor) -> None:
         """
         完成输出
 
@@ -122,28 +124,30 @@ class GroupProcessor(ABC):
         self.group_config: Dict = group_config
 
         # 以下字段在 process() 中动态填充
-        self.base_x: int | None = None  # 轨道组基准 X 坐标
-        self.base_y: int | None = None  # 轨道组基准 Y 坐标
-        self.base_z: int | None = None  # 轨道组基准 Z 坐标
-        self.notes: List[Note] | None = None  # 属于本组的音符（按 tick 排序）
-        self.tick_status: defaultdict[int, Dict[str, bool]] = None  # tick 级状态缓存
+        self.base_x: int = 0  # 轨道组基准 X 坐标
+        self.base_y: int = 0  # 轨道组基准 Y 坐标
+        self.base_z: int = 0  # 轨道组基准 Z 坐标
+        self.notes: List[Note] = []  # 属于本组的音符（按 tick 排序）
+        self.tick_status: defaultdict[int, Dict[str, bool]] = defaultdict(
+            lambda: {"left": False, "right": False}
+        )  # tick 级状态缓存
         self.group_max_tick: int = 0  # 本组最大 tick
         self.layers: set[int] = set()  # 本组包含的 layer 编号
         self.cover_block: str = ""  # 走线顶层方块
         self.base_block: str = ""  # 走线/基座方块
-        self.log_callback = None  # 日志回调
-        self.progress_callback = None  # 进度回调
-        self.output_strategy: OutputFormatStrategy = None  # 输出格式策略
+        self.log_callback: Optional[Callable[[str], None]] = None  # 日志回调
+        self.progress_callback: Optional[Callable[[int], None]] = None  # 进度回调
+        self.output_strategy: Optional[OutputFormatStrategy] = None  # 输出格式策略
         self.generation_mode: str = "default"  # 生成模式（default 或 staircase）
 
     # ----------------------
     # 回调注册
     # ----------------------
-    def set_log_callback(self, callback):
+    def set_log_callback(self, callback: Callable[[str], None]) -> None:
         """设置日志输出回调，供前端 UI 实时显示信息。"""
         self.log_callback = callback
 
-    def set_progress_callback(self, callback):
+    def set_progress_callback(self, callback: Callable[[int], None]) -> None:
         """设置进度更新回调，参数为 0-100 整数。"""
         self.progress_callback = callback
 
@@ -160,7 +164,7 @@ class GroupProcessor(ABC):
     # ----------------------
     # 输出策略设置
     # ----------------------
-    def set_output_strategy(self, strategy: OutputFormatStrategy):
+    def set_output_strategy(self, strategy: OutputFormatStrategy) -> None:
         """
         设置输出格式策略
 
@@ -173,7 +177,7 @@ class GroupProcessor(ABC):
     # ----------------------
     # 主流程入口
     # ----------------------
-    def process(self):
+    def process(self) -> None:
         """遍历所有轨道组，依次处理。"""
         # 检查是否设置了输出策略
         if self.output_strategy is None:
@@ -213,7 +217,7 @@ class GroupProcessor(ABC):
     # ----------------------
     # 音符加载 & 工具方法
     # ----------------------
-    def load_notes(self, all_notes: List[Note]):
+    def load_notes(self, all_notes: List[Note]) -> None:
         """
         过滤出属于本组的音符，并按 tick 升序排序。
         同时计算组内最大 tick。
@@ -317,7 +321,7 @@ class GroupProcessor(ABC):
     # ----------------------
     # 逐 tick 处理
     # ----------------------
-    def process_group(self):
+    def process_group(self) -> None:
         """
         从 tick 0 到 global_max_tick，每一步：
         1. 生成基础时钟结构；

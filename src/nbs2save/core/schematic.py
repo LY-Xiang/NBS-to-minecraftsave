@@ -15,7 +15,7 @@ Minecraft结构文件生成器
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional, Tuple
 
 from mcschematic import MCSchematic
 from pynbs import Note
@@ -31,9 +31,9 @@ class SchematicOutputStrategy(OutputFormatStrategy):
     """输出为 .schem 结构文件的策略实现。"""
 
     def __init__(self):
-        self.schem: MCSchematic = None  # 内存中的结构对象
+        self.schem: Optional[MCSchematic] = None  # 内存中的结构对象
 
-    def initialize(self, processor: GroupProcessor):
+    def initialize(self, processor: GroupProcessor) -> None:
         """
         初始化输出格式
 
@@ -44,7 +44,7 @@ class SchematicOutputStrategy(OutputFormatStrategy):
         # 验证配置
         self.validate_config(processor)
 
-    def write_base_structures(self, processor: GroupProcessor, tick: int):
+    def write_base_structures(self, processor: GroupProcessor, tick: int) -> None:
         """
         写入基础结构
 
@@ -70,7 +70,9 @@ class SchematicOutputStrategy(OutputFormatStrategy):
             (tick_x - 1, processor.base_y - 1, processor.base_z), processor.base_block
         )
 
-    def write_pan_platform(self, processor: GroupProcessor, tick: int, direction: int):
+    def write_pan_platform(
+        self, processor: GroupProcessor, tick: int, direction: int
+    ) -> None:
         """
         写入声像平台
 
@@ -116,7 +118,7 @@ class SchematicOutputStrategy(OutputFormatStrategy):
 
         processor.tick_status[tick]["right" if direction == 1 else "left"] = True
 
-    def write_note(self, processor: GroupProcessor, note: Note):
+    def write_note(self, processor: GroupProcessor, note: Note) -> None:
         """
         写入音符
 
@@ -141,7 +143,7 @@ class SchematicOutputStrategy(OutputFormatStrategy):
         if self.is_sand_block(base_block):
             self.schem.setBlock((tick_x, y - 2, z_pos), "minecraft:barrier")
 
-    def finalize(self, processor: GroupProcessor):
+    def finalize(self, processor: GroupProcessor) -> None:
         """
         完成输出，保存结构文件
 
@@ -156,11 +158,11 @@ class SchematicOutputStrategy(OutputFormatStrategy):
     # 工具方法
     # ----------------------
     @staticmethod
-    def get_note_block_info(note: Note):
+    def get_note_block_info(note: Note) -> Tuple[str, str, str]:
         """根据 instrument 获取音符方块属性。"""
-        instrument = INSTRUMENT_MAPPING.get(note.instrument, "harp")
-        base_block = INSTRUMENT_BLOCK_MAPPING.get(note.instrument, "minecraft:stone")
-        note_pitch = NOTEPITCH_MAPPING.get(note.key, "0")
+        instrument = INSTRUMENT_MAPPING.map(note.instrument)
+        base_block = INSTRUMENT_BLOCK_MAPPING.map(note.instrument)
+        note_pitch = NOTEPITCH_MAPPING.map(note.key)
         return instrument, base_block, note_pitch
 
     @staticmethod
@@ -169,7 +171,7 @@ class SchematicOutputStrategy(OutputFormatStrategy):
         return block.endswith("sand")
 
     @staticmethod
-    def validate_config(processor: GroupProcessor):
+    def validate_config(processor: GroupProcessor) -> None:
         """确保 config 包含必需的键。"""
         required_keys = ["output_file", "data_version"]
         for key in required_keys:
@@ -183,27 +185,33 @@ class SchematicOutputStrategy(OutputFormatStrategy):
 class SchematicProcessor(GroupProcessor):
     """向后兼容的 SchematicProcessor 类。"""
 
-    def __init__(self, all_notes, global_max_tick, config, group_config):
+    def __init__(
+        self,
+        all_notes: List[Note],
+        global_max_tick: int,
+        config: dict,
+        group_config: dict,
+    ):
         super().__init__(all_notes, global_max_tick, config, group_config)
         self.set_output_strategy(SchematicOutputStrategy())
 
-    def _generate_base_structures(self, tick: int):
+    def _generate_base_structures(self, tick: int) -> None:
         """向后兼容的方法。"""
         pass
 
-    def _generate_pan_platform(self, tick: int, direction: int):
+    def _generate_pan_platform(self, tick: int, direction: int) -> None:
         """向后兼容的方法。"""
         pass
 
-    def _generate_note(self, note: Note):
+    def _generate_note(self, note: Note) -> None:
         """向后兼容的方法。"""
         pass
 
-    def _write(self, commands: List[str]):
+    def _write(self, commands: List[str]) -> None:
         """向后兼容的方法。"""
         pass
 
-    def process(self):
+    def process(self) -> None:
         """前置校验 + 父类流程 + 最终保存。"""
         # 验证配置
         SchematicOutputStrategy.validate_config(self)

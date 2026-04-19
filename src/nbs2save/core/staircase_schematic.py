@@ -15,6 +15,7 @@ Minecraft阶梯向下结构文件生成器
 
 from __future__ import annotations
 
+from typing import Optional, Tuple
 
 from mcschematic import MCSchematic
 from pynbs import Note
@@ -30,9 +31,9 @@ class StaircaseSchematicOutputStrategy(OutputFormatStrategy):
     """输出为 .schem 结构文件的阶梯向下策略实现。"""
 
     def __init__(self):
-        self.schem: MCSchematic = None  # 内存中的结构对象
+        self.schem: Optional[MCSchematic] = None  # 内存中的结构对象
 
-    def initialize(self, processor: GroupProcessor):
+    def initialize(self, processor: GroupProcessor) -> None:
         """
         初始化输出格式
 
@@ -43,7 +44,7 @@ class StaircaseSchematicOutputStrategy(OutputFormatStrategy):
         # 验证配置
         self.validate_config(processor)
 
-    def write_base_structures(self, processor: GroupProcessor, tick: int):
+    def write_base_structures(self, processor: GroupProcessor, tick: int) -> None:
         """
         写入基础结构
 
@@ -69,7 +70,9 @@ class StaircaseSchematicOutputStrategy(OutputFormatStrategy):
             (tick_x - 1, processor.base_y - 1, processor.base_z), processor.base_block
         )
 
-    def write_pan_platform(self, processor: GroupProcessor, tick: int, direction: int):
+    def write_pan_platform(
+        self, processor: GroupProcessor, tick: int, direction: int
+    ) -> None:
         """
         写入声像平台（阶梯向下模式）
 
@@ -148,7 +151,7 @@ class StaircaseSchematicOutputStrategy(OutputFormatStrategy):
 
         processor.tick_status[tick]["right" if direction == 1 else "left"] = True
 
-    def write_note(self, processor: GroupProcessor, note: Note):
+    def write_note(self, processor: GroupProcessor, note: Note) -> None:
         """
         写入音符（阶梯向下模式）
 
@@ -196,7 +199,7 @@ class StaircaseSchematicOutputStrategy(OutputFormatStrategy):
         if self.is_sand_block(base_block):
             self.schem.setBlock((tick_x, y_pos - 2, z_pos), "minecraft:barrier")
 
-    def finalize(self, processor: GroupProcessor):
+    def finalize(self, processor: GroupProcessor) -> None:
         """
         完成输出，保存结构文件
 
@@ -211,11 +214,11 @@ class StaircaseSchematicOutputStrategy(OutputFormatStrategy):
     # 工具方法
     # ----------------------
     @staticmethod
-    def get_note_block_info(note: Note):
+    def get_note_block_info(note: Note) -> Tuple[str, str, str]:
         """根据 instrument 获取音符方块属性。"""
-        instrument = INSTRUMENT_MAPPING.get(note.instrument, "harp")
-        base_block = INSTRUMENT_BLOCK_MAPPING.get(note.instrument, "minecraft:stone")
-        note_pitch = NOTEPITCH_MAPPING.get(note.key, "0")
+        instrument = INSTRUMENT_MAPPING.map(note.instrument)
+        base_block = INSTRUMENT_BLOCK_MAPPING.map(note.instrument)
+        note_pitch = NOTEPITCH_MAPPING.map(note.key)
         return instrument, base_block, note_pitch
 
     @staticmethod
@@ -226,7 +229,7 @@ class StaircaseSchematicOutputStrategy(OutputFormatStrategy):
     # ----------------------
     # 配置校验
     # ----------------------
-    def validate_config(self, processor: GroupProcessor):
+    def validate_config(self, processor: GroupProcessor) -> None:
         """确保 config 包含必需的键。"""
         required_keys = ["output_file", "data_version"]
         for key in required_keys:
